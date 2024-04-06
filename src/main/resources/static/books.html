@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Books</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">Books</h1>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>BookId</th>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>ISBN</th>
+                    <th>Publisher</th>
+                    <th>Publish Year</th>
+                    <th>Available Copies</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="book : ${books}">
+                    <td th:text="${book.bookID}"></td>
+                    <td th:text="${book.title}"></td>
+                    <td th:text="${book.author}"></td>
+                    <td th:text="${book.isbn}"></td>
+                    <td th:text="${book.publisher}"></td>
+                    <td th:text="${book.publishYear}"></td>
+                    <td th:text="${book.availableCopies}"></td>
+                    <td>
+                        <a class="btn btn-primary" th:href="@{/books/edit/{bookID}(bookID=${book.bookID})}">Edit</a>
+                        <a class="btn btn-danger" th:href="@{/books/delete/{bookID}(bookID=${book.bookID})}">Delete</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <a class="btn btn-success" href="/books/add">Add Book</a>
+    </div>
+</body>
+</html>
