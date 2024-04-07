@@ -1,74 +1,45 @@
 package com.example.library.borrowers;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
 
+import java.sql.Date;
+import java.util.List;
 
+@Component
 public class BorrowersDAO {
-    private Connection connection;
+    private final JdbcTemplate jdbcTemplate;
 
-
-    public BorrowersDAO(Connection connection) {
-        this.connection = connection;
+    @Autowired
+    public BorrowersDAO(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
-
-	public void addBorrower(Borrowers borrower) throws SQLException {
+    public void addBorrower(Borrowers borrower) {
         String query = "INSERT INTO Borrowers (MemberID, BookID, BorrowDate, ReturnDate) VALUES (?, ?, ?, ?)";
-        PreparedStatement statement = connection.prepareStatement(query);
-        statement.setInt(1, borrower.getMemberID());
-        statement.setInt(2, borrower.getBookID());
-        statement.setDate(3, new java.sql.Date(borrower.getBorrowDate().getTime()));
-        statement.setDate(4, borrower.getReturnDate() != null ? new java.sql.Date(borrower.getReturnDate().getTime()) : null);
-        statement.executeUpdate();
+        jdbcTemplate.update(query, borrower.getMemberID(), borrower.getBookID(), borrower.getBorrowDate(), borrower.getReturnDate());
     }
-    
-    public void displayAllBorrowedBooks() throws SQLException {
-        String query = "SELECT * FROM Borrowers";
-        PreparedStatement statement = connection.prepareStatement(query);
-        ResultSet resultSet = statement.executeQuery();
 
-        System.out.println("Borrowed Books:");
-        while (resultSet.next()) {
+    public List<Borrowers> getAllBorrowedBooks() {
+        String query = "SELECT * FROM Borrowers";
+        return jdbcTemplate.query(query, (resultSet, rowNum) -> {
+            int borrowerID = resultSet.getInt("BorrowerID");
             int memberID = resultSet.getInt("MemberID");
             int bookID = resultSet.getInt("BookID");
-            java.sql.Date borrowDate = resultSet.getDate("BorrowDate");
-            java.sql.Date returnDate = resultSet.getDate("ReturnDate");
-            System.out.println("Member ID: " + memberID + ", Book ID: " + bookID + ", Borrow Date: " + borrowDate + ", Return Date: " + returnDate);
-        }
+            Date borrowDate = resultSet.getDate("BorrowDate");
+            Date returnDate = resultSet.getDate("ReturnDate");
+            return new Borrowers(borrowerID, memberID, bookID, borrowDate, returnDate);
+        });
     }
-    
+
     public boolean hasBorrowedBooks(int memberID) {
-        String query = "SELECT COUNT(*) FROM borrowers WHERE MemberID = ?";
-        try {
-        	PreparedStatement stmt = connection.prepareStatement(query);
-            stmt.setInt(1, memberID);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return rs.getInt(1) > 0; 
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false; 
-    }
-    
-   
-    public void removeBorrowerRecord(int bookID, int memberID) throws SQLException {
-        String query = "DELETE FROM borrowers WHERE BookID = ? AND MemberID = ?";
-        try (PreparedStatement stmt = connection.prepareStatement(query)) {
-            stmt.setInt(1, bookID);
-            stmt.setInt(2, memberID);
-            int rowsAffected = stmt.executeUpdate();
-            if (rowsAffected > 0) {
-                System.out.println("Borrower record removed successfully.");
-            } else {
-                System.out.println("No borrower record found to remove.");
-            }
-        }
+        String query = "SELECT COUNT(*) FROM Borrowers WHERE MemberID = ?";
+        return jdbcTemplate.queryForObject(query, Integer.class, memberID) > 0;
     }
 
-
+    public void removeBorrowerRecord(int bookID, int memberID) {
+        String query = "DELETE FROM Borrowers WHERE BookID = ? AND MemberID = ?";
+        jdbcTemplate.update(query, bookID, memberID);
+    }
 }
